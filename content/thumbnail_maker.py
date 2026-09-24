@@ -111,6 +111,38 @@ class ThumbnailMaker:
         logger.info(f"Thumbnail saved: {final_path}")
         return str(final_path)
 
+    def create_thumbnail_variants(
+        self,
+        title: str,
+        background_image: Optional[str] = None,
+        ai_prompt: Optional[str] = None,
+        output_base: str = "thumb_variant"
+    ) -> List[Dict[str, str]]:
+        """Generates 3 distinct A/B test thumbnail variants with different colorways and badges."""
+        configs = [
+            {"style": "Neon Gold & Alert", "color": "yellow", "badge": "🔥 VIRAL 2026", "suffix": "A"},
+            {"style": "High-Contrast Crimson", "color": "red", "badge": "⚠️ MUST WATCH", "suffix": "B"},
+            {"style": "Cyber Cyan Electric", "color": "cyan", "badge": "⚡ BREAKTHROUGH", "suffix": "C"}
+        ]
+        results = []
+        for cfg in configs:
+            path = self.create_thumbnail(
+                title=title,
+                background_image=background_image,
+                ai_prompt=ai_prompt,
+                badge_text=cfg["badge"],
+                main_color=cfg["color"],
+                output_filename=f"{output_base}_{cfg['suffix']}"
+            )
+            results.append({
+                "style": cfg["style"],
+                "path": path,
+                "variant": cfg["suffix"],
+                "color": cfg["color"],
+                "badge": cfg["badge"]
+            })
+        return results
+
     def _get_font(self, size: int) -> ImageFont.ImageFont:
         candidate_paths = [
             "/System/Library/Fonts/Supplemental/Impact.ttf",
