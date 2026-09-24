@@ -166,3 +166,4 @@ class VideoCreatorPro:
                 background_music_path=background_music_path,
                 bg_music_volume=bg_music_volume
             )
+

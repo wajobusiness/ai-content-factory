@@ -381,3 +381,4 @@ elif menu == "📜 Pipeline History":
         for item in reversed(records):
             with st.expander(f"🎬 {item.get('title')} ({item.get('timestamp')})"):
                 st.json(item)
+

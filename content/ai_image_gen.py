@@ -6,9 +6,13 @@ Supports styles: Cinematic, 3D Cartoon, Anime, Cyberpunk, Photorealistic.
 
 import time
 import urllib.parse
-import requests
 from pathlib import Path
 from typing import Optional, Dict, Any
+
+try:
+    import requests
+except ImportError:
+    requests = None
 
 from config import TEMP_DIR, OUTPUT_DIR
 from utils.helpers import logger, sanitize_filename
@@ -78,3 +82,4 @@ class AIImageGenerator:
             ))
 
         return str(target_path)
+

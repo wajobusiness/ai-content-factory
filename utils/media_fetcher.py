@@ -5,10 +5,14 @@ Fetches free stock footage (Pexels), royalty-free audio, and synthetic visuals.
 
 import time
 import random
-import requests
 from pathlib import Path
 from typing import List, Optional, Dict
 from PIL import Image, ImageDraw, ImageFont
+
+try:
+    import requests
+except ImportError:
+    requests = None
 
 from config import PEXELS_API_KEY, TEMP_DIR, MUSIC_DIR
 from utils.helpers import logger, sanitize_filename
@@ -29,8 +33,8 @@ class MediaFetcher:
         min_duration: int = 3,
         max_duration: int = 30
     ) -> List[str]:
-        if not self.pexels_api_key:
-            logger.warning("No Pexels API key provided. Skipping Pexels video fetch.")
+        if not requests or not self.pexels_api_key:
+            logger.warning("No Pexels API key or requests library available. Skipping Pexels video fetch.")
             return []
 
         url = "https://api.pexels.com/videos/search"
@@ -85,8 +89,8 @@ class MediaFetcher:
         orientation: str = "landscape",
         per_page: int = 5
     ) -> List[str]:
-        if not self.pexels_api_key:
-            logger.warning("No Pexels API key provided. Skipping Pexels photo fetch.")
+        if not requests or not self.pexels_api_key:
+            logger.warning("No Pexels API key or requests library available. Skipping Pexels photo fetch.")
             return []
 
         url = "https://api.pexels.com/v1/search"
@@ -120,6 +124,8 @@ class MediaFetcher:
             return []
 
     def download_file(self, url: str, target_path: Path) -> bool:
+        if not requests:
+            return False
         try:
             target_path.parent.mkdir(parents=True, exist_ok=True)
             with requests.get(url, stream=True, timeout=30) as r:
