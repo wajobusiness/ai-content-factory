@@ -153,7 +153,7 @@ if menu == "🚀 One-Click Generator":
 
             st.markdown("### 🖼️ High-CTR Thumbnail")
             if res.get("thumbnail_path") and os.path.exists(res.get("thumbnail_path")):
-                st.image(res.get("thumbnail_path"), use_column_width=True)
+                st.image(res.get("thumbnail_path"), use_container_width=True)
                 with open(res.get("thumbnail_path"), "rb") as tf:
                     st.download_button("⬇️ Download Thumbnail", tf, file_name=os.path.basename(res.get("thumbnail_path")), mime="image/jpeg")
 
@@ -274,7 +274,7 @@ elif menu == "🎨 AI Visuals & Thumbnails":
             w, h = (1280, 720) if "Landscape" in dim_choice else ((720, 1280) if "Vertical" in dim_choice else (1024, 1024))
             with st.spinner("Generating image via Pollinations AI..."):
                 img_p = im_gen.generate_image(prompt=img_prompt, style=style, width=w, height=h)
-            st.image(img_p, caption=f"Generated Image ({style})", use_column_width=True)
+            st.image(img_p, caption=f"Generated Image ({style})", use_container_width=True)
 
     with tab_thumb:
         t_title = st.text_input("Thumbnail Title Text", value="THIS CHANGES EVERYTHING!")
@@ -291,7 +291,7 @@ elif menu == "🎨 AI Visuals & Thumbnails":
                     badge_text=t_badge,
                     main_color=t_color
                 )
-            st.image(thumb_out, caption="High-CTR Thumbnail", use_column_width=True)
+            st.image(thumb_out, caption="High-CTR Thumbnail", use_container_width=True)
 
 # TAB 6: CARTOON STUDIO
 elif menu == "🎭 Cartoon Studio":
@@ -318,7 +318,7 @@ elif menu == "🎭 Cartoon Studio":
         st.audio(ep.get("voiceover", {}).get("audio_path"))
 
         for sc in ep.get("scenes", []):
-            st.image(sc.get("image_path"), caption=f"Scene {sc.get('scene_number')}: {sc.get('narration')}")
+            st.image(sc.get("image_path"), caption=f"Scene {sc.get('scene_number')}: {sc.get('narration')}", use_container_width=True)
 
 # TAB 7: SEO ENGINE
 elif menu == "📈 SEO Engine":
