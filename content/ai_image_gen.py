@@ -58,19 +58,20 @@ class AIImageGenerator:
         target_path = TEMP_DIR / f"{clean_name}.jpg"
 
         success = False
-        for attempt in range(3):
-            try:
-                res = requests.get(url, timeout=35)
-                if res.status_code == 200 and len(res.content) > 5000:
-                    with open(target_path, "wb") as f:
-                        f.write(res.content)
-                    success = True
-                    logger.info(f"AI Image downloaded successfully: {target_path}")
-                    break
-                time.sleep(2)
-            except Exception as e:
-                logger.warning(f"Pollinations fetch attempt {attempt+1} failed: {e}")
-                time.sleep(2)
+        if requests:
+            for attempt in range(2):
+                try:
+                    res = requests.get(url, timeout=12)
+                    if res.status_code == 200 and len(res.content) > 5000:
+                        with open(target_path, "wb") as f:
+                            f.write(res.content)
+                        success = True
+                        logger.info(f"AI Image downloaded successfully: {target_path}")
+                        break
+                    time.sleep(1)
+                except Exception as e:
+                    logger.warning(f"Pollinations fetch attempt {attempt+1} failed: {e}")
+                    time.sleep(1)
 
         if not success:
             logger.info("Using procedural visual canvas fallback.")

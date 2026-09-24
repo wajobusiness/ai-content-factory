@@ -1,16 +1,17 @@
 """
 AI Content Factory - Voiceover Generator
 Generates studio-quality AI voiceover and synchronized SRT subtitles using Edge-TTS (100% Free).
+Runs asynchronously in an isolated worker thread to guarantee compatibility with Streamlit/Starlette/ASGI.
 """
 
 import os
 import sys
 import asyncio
-import subprocess
+import concurrent.futures
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from config import DEFAULT_VOICE, DEFAULT_VOICE_RATE, DEFAULT_VOICE_PITCH, TEMP_DIR, OUTPUT_DIR
+from config import DEFAULT_VOICE, DEFAULT_VOICE_RATE, DEFAULT_VOICE_PITCH, OUTPUT_DIR
 from utils.helpers import logger, sanitize_filename
 
 
@@ -64,6 +65,33 @@ class VoiceoverGenerator:
 
         return True
 
+    def _run_in_isolated_thread(
+        self,
+        text: str,
+        audio_path: Path,
+        srt_path: Optional[Path],
+        voice: Optional[str],
+        rate: Optional[str],
+        pitch: Optional[str]
+    ) -> bool:
+        """Executes Edge-TTS in a fresh, isolated background thread with its own event loop."""
+        def worker():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            try:
+                async def runner():
+                    task = asyncio.create_task(
+                        self._async_generate_edge_tts(text, audio_path, srt_path, voice, rate, pitch)
+                    )
+                    return await task
+                return new_loop.run_until_complete(runner())
+            finally:
+                new_loop.close()
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(worker)
+            return future.result(timeout=45)
+
     def generate(
         self,
         text: str,
@@ -81,26 +109,19 @@ class VoiceoverGenerator:
 
         success = False
         try:
-            try:
-                import nest_asyncio
-                nest_asyncio.apply()
-            except Exception:
-                pass
-
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-
-            loop.run_until_complete(
-                self._async_generate_edge_tts(text, audio_path, srt_path, voice, rate, pitch)
+            success = self._run_in_isolated_thread(
+                text=text,
+                audio_path=audio_path,
+                srt_path=srt_path,
+                voice=voice,
+                rate=rate,
+                pitch=pitch
             )
-
             if audio_path.exists() and audio_path.stat().st_size > 100:
                 success = True
+                logger.info(f"Edge-TTS audio successfully generated: {audio_path}")
         except Exception as e:
-            logger.warning(f"Edge-TTS generation encountered issue: {e}")
+            logger.warning(f"Edge-TTS generation encountered issue: {e}. Attempting fallback...")
 
         if not success:
             from utils.media_fetcher import MediaFetcher
@@ -108,6 +129,7 @@ class VoiceoverGenerator:
             fallback_wav = OUTPUT_DIR / f"{clean_name}.wav"
             fetcher.generate_ambient_track(fallback_wav, duration_seconds=15)
             audio_path = fallback_wav
+            logger.info("Generated fallback audio track.")
 
         duration = self.get_audio_duration(audio_path)
 
@@ -161,4 +183,3 @@ class VoiceoverGenerator:
         secs = int(seconds % 60)
         msecs = int((seconds - int(seconds)) * 1000)
         return f"{hrs:02d}:{mins:02d}:{secs:02d},{msecs:03d}"
-
