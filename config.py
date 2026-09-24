@@ -5,7 +5,6 @@ Handles environment variables, Streamlit Secrets, and default paths.
 
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 
 # Base Directory Paths
 ROOT_DIR = Path(__file__).parent.resolve()
@@ -15,8 +14,12 @@ ASSETS_DIR = ROOT_DIR / "assets"
 MUSIC_DIR = ASSETS_DIR / "music"
 FONTS_DIR = ASSETS_DIR / "fonts"
 
-# Load environment variables from .env if present
-load_dotenv(ROOT_DIR / ".env")
+# Load environment variables from .env if python-dotenv is available
+try:
+    from dotenv import load_dotenv
+    load_dotenv(ROOT_DIR / ".env")
+except Exception:
+    pass
 
 # Ensure all vital directories exist
 for path in [OUTPUT_DIR, TEMP_DIR, ASSETS_DIR, MUSIC_DIR, FONTS_DIR]:
@@ -102,3 +105,4 @@ FACEBOOK_PAGE_ID = get_secret("FACEBOOK_PAGE_ID", "")
 # Scheduler
 AUTO_SCHEDULE_INTERVAL_HOURS = int(get_secret("AUTO_SCHEDULE_INTERVAL_HOURS", "24"))
 AUTO_POST_NICHE = get_secret("AUTO_POST_NICHE", "tech")
+
