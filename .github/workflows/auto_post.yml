@@ -1,0 +1,100 @@
+name: AI Content Factory - Automated Video Generator
+
+on:
+  schedule:
+    # Runs daily at 09:00 UTC (Change cron schedule as desired)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Video Topic (Leave blank for automatic viral trend discovery)'
+        required: false
+        default: ''
+      niche:
+        description: 'Content Niche'
+        required: true
+        type: choice
+        options:
+          - tech
+          - finance
+          - motivation
+          - mystery
+          - cartoons
+          - science
+          - general
+        default: 'tech'
+      content_type:
+        description: 'Content Style'
+        required: true
+        type: choice
+        options:
+          - tech_review
+          - motivational
+          - news_update
+          - educational
+          - mystery
+          - shorts
+        default: 'tech_review'
+      orientation:
+        description: 'Video Format'
+        required: true
+        type: choice
+        options:
+          - landscape
+          - vertical
+        default: 'landscape'
+
+jobs:
+  build-and-generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Check out repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 🎬 Install FFmpeg & System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libsm6 libxext6
+
+      - name: 📦 Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🚀 Run AI Content Factory Pipeline
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+        run: |
+          TOPIC_ARG=""
+          if [ -n "${{ inputs.topic }}" ]; then
+            TOPIC_ARG="--topic '${{ inputs.topic }}'"
+          fi
+
+          python main.py generate \
+            $TOPIC_ARG \
+            --niche "${{ inputs.niche || 'tech' }}" \
+            --type "${{ inputs.content_type || 'tech_review' }}" \
+            --orientation "${{ inputs.orientation || 'landscape' }}"
+
+      - name: 📦 Upload Video, Thumbnail & SEO Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-content-package
+          path: |
+            output/*.mp4
+            output/*.jpg
+            output/*.mp3
+            output/*.srt
+            output/pipeline_history.json
+          retention-days: 14
