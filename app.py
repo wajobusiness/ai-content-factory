@@ -43,6 +43,8 @@ from platforms.youtube_uploader import YouTubeUploader
 from platforms.facebook_publisher import FacebookPublisher
 from auto_scheduler import ContentPipeline
 from utils.helpers import load_json
+from utils.task_runner import task_manager
+from components.task_banner import render_active_task_banner, render_sidebar_task_indicator
 
 # Configure Streamlit page
 st.set_page_config(
@@ -99,7 +101,11 @@ if active_topic:
     </div>
     """, unsafe_allow_html=True)
 
+render_sidebar_task_indicator()
 render_api_status_sidebar()
+
+# Render global persistent task banner across all studio pages
+render_active_task_banner()
 
 # ==============================================================================
 # TAB 0: STUDIO HUB (HOME PAGE)
@@ -308,33 +314,55 @@ elif menu == "🚀 One-Click Studio":
         """, unsafe_allow_html=True)
 
     if generate_btn:
-        pipeline_steps = ["1. Trend & Script", "2. Voice & Subtitles", "3. Visuals & Motion", "4. Video Render", "5. SEO & Package"]
-        pipeline = ContentPipeline()
-        with st.status("🎬 Running Autonomous Production Engine...", expanded=True) as status:
-            render_stepper(pipeline_steps, 0)
-            st.write("🔍 Identifying viral angles & crafting high-retention script...")
-            
-            res = pipeline.run_full_pipeline(
-                topic=topic_input.strip() if topic_input.strip() else None,
-                niche=niche_option,
-                content_type=content_type,
-                voice=selected_voice,
-                orientation=orientation,
-                resolution=resolution,
-                enable_upload=enable_upload,
-                dry_run=True
+        active_t = task_manager.get_active_task()
+        if active_t and active_t.status == "running":
+            st.warning("⚠️ A production job is already active in the background. Stop it or wait for it to finish.")
+        else:
+            pipeline = ContentPipeline()
+            task_title = topic_input.strip() if topic_input.strip() else f"Auto-{niche_option.capitalize()}-Video"
+            task_manager.start_pipeline_task(
+                task_name=f"Produce: {task_title[:32]}",
+                target_fn=pipeline.run_full_pipeline,
+                kwargs={
+                    "topic": topic_input.strip() if topic_input.strip() else None,
+                    "niche": niche_option,
+                    "content_type": content_type,
+                    "voice": selected_voice,
+                    "orientation": orientation,
+                    "resolution": resolution,
+                    "enable_upload": enable_upload,
+                    "dry_run": True
+                }
             )
-            
-            render_stepper(pipeline_steps, 4)
-            status.update(label="✅ Complete Production Package Generated Successfully!", state="complete")
+            st.session_state["workspace_topic"] = task_title
+            st.rerun()
 
-        st.session_state["latest_production_result"] = res
-        st.session_state["workspace_topic"] = res.get("title", topic_input)
-        st.success(f"🎉 Created '{res.get('title')}' in {res.get('elapsed_seconds')}s!")
+    # Live In-Studio Progress Monitor if Task is Running
+    active_t = task_manager.get_active_task()
+    if active_t and active_t.status == "running":
+        summary = active_t.get_summary()
+        st.markdown("---")
+        st.markdown("### ⚡ Live Autonomous Production in Progress")
+        st.markdown(f"**Current Phase:** `{summary['current_step']}` | **Elapsed:** {summary['elapsed_seconds']}s")
+        st.progress(summary["progress"])
+        
+        with st.expander("📜 Live Worker Execution Logs", expanded=True):
+            for log_line in summary["logs"][-6:]:
+                st.code(log_line, language="text")
+
+        c_stop_in_page, _ = st.columns([1, 3])
+        with c_stop_in_page:
+            if st.button("🛑 Stop Autonomous Production", key="btn_stop_in_studio_page", type="primary", use_container_width=True):
+                task_manager.cancel_active_task()
+                st.rerun()
+
+        # Streamlit auto-refresh while active
+        time.sleep(1.2)
+        st.rerun()
 
     # Display Latest Production Results
     latest = st.session_state.get("latest_production_result")
-    if latest:
+    if latest and (not active_t or active_t.status != "running"):
         st.markdown("---")
         st.markdown("### 📦 Production Deliverables & Assets")
 

@@ -54,12 +54,26 @@ class ContentPipeline:
         orientation: str = DEFAULT_ORIENTATION,
         resolution: str = DEFAULT_RESOLUTION,
         enable_upload: bool = False,
-        dry_run: bool = True
+        dry_run: bool = True,
+        cancel_event: Optional[Any] = None,
+        progress_callback: Optional[Any] = None
     ) -> Dict[str, Any]:
         start_time = time.time()
         logger.info("=" * 60)
         logger.info("🚀 STARTING AI CONTENT FACTORY FULL PIPELINE")
         logger.info("=" * 60)
+
+        def _check_cancel():
+            if cancel_event and cancel_event.is_set():
+                from utils.task_runner import TaskCancelledException
+                raise TaskCancelledException("Pipeline cancelled by user.")
+
+        def _notify(step_name: str, progress: float, log_msg: str = ""):
+            if progress_callback:
+                progress_callback(step_name, progress, log_msg)
+
+        _check_cancel()
+        _notify("1. Research & Angle", 0.1, "Discovering trending signals and topic angles...")
 
         if not topic:
             logger.info(f"Discovering top trend for niche '{niche}'...")
@@ -67,6 +81,8 @@ class ContentPipeline:
             topic = trends[0]["title"] if trends else f"The Future of {niche.capitalize()} in 2026"
 
         logger.info(f"📌 Selected Topic: '{topic}'")
+        _check_cancel()
+        _notify("2. Scriptwriting", 0.25, f"Drafting retention-engineered script for '{topic[:35]}...'")
 
         script_data = self.script_gen.generate_script(
             topic=topic,
@@ -74,6 +90,9 @@ class ContentPipeline:
             target_duration="60s"
         )
         video_title = script_data.get("title", topic)
+
+        _check_cancel()
+        _notify("3. Neural Voiceover", 0.45, f"Synthesizing speech & word-level subtitles via Edge-TTS...")
 
         voice_res = self.voice_gen.generate(
             text=script_data.get("full_voiceover_text", topic),
@@ -83,10 +102,14 @@ class ContentPipeline:
         audio_path = voice_res.get("audio_path")
         srt_path = voice_res.get("srt_path")
 
+        _check_cancel()
+        _notify("4. Visual Scene Generation", 0.65, "Generating multi-scene cinematic artwork & B-roll...")
+
         scenes = script_data.get("scenes", [])
         scene_media = []
 
-        for sc in scenes:
+        for sc_idx, sc in enumerate(scenes):
+            _check_cancel()
             query = sc.get("pexels_query", topic)
             pexels_vids = self.media_fetcher.fetch_pexels_videos(query=query, orientation=orientation, per_page=1)
             if pexels_vids:
@@ -101,6 +124,9 @@ class ContentPipeline:
                 )
                 scene_media.append(img)
 
+        _check_cancel()
+        _notify("5. Video Rendering & Assembly", 0.82, "Rendering HD video with Ken Burns motion & audio ducking...")
+
         music_path = self.media_fetcher.generate_ambient_track()
 
         final_video_path = self.video_creator.build_pro_video(
@@ -112,6 +138,9 @@ class ContentPipeline:
             background_music_path=music_path,
             enable_ken_burns=True
         )
+
+        _check_cancel()
+        _notify("6. Thumbnail & SEO Packaging", 0.92, "Designing high-CTR thumbnail and calculating SEO score...")
 
         thumb_bg = scene_media[0] if (scene_media and scene_media[0].endswith((".jpg", ".png"))) else None
         thumb_path = self.thumb_maker.create_thumbnail(
@@ -127,6 +156,7 @@ class ContentPipeline:
             script_data=script_data,
             target_niche=niche
         )
+
 
         yt_result = None
         fb_result = None
