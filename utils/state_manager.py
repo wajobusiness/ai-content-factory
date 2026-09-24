@@ -14,18 +14,18 @@ def init_session_state():
         "workspace_topic": "",
         "workspace_niche": "tech",
         "workspace_content_type": "shorts",
-        "workspace_script_data": None,
+        "workspace_script_data": {},
         "workspace_voice": DEFAULT_VOICE,
-        "workspace_audio_res": None,
+        "workspace_audio_res": {},
         "workspace_thumbnail_variants": [],
-        "workspace_seo_data": None,
-        "latest_production_result": None,
+        "workspace_seo_data": {},
+        "latest_production_result": {},
         "active_preset_key": "viral_shorts",
         "diagnostics_results": {}
     }
     
     for key, val in defaults.items():
-        if key not in st.session_state:
+        if key not in st.session_state or st.session_state[key] is None:
             st.session_state[key] = val
 
 

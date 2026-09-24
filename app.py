@@ -362,7 +362,7 @@ elif menu == "🚀 One-Click Studio":
 
     # Display Latest Production Results
     latest = st.session_state.get("latest_production_result")
-    if latest and (not active_t or active_t.status != "running"):
+    if isinstance(latest, dict) and latest.get("video_path") and (not active_t or active_t.status != "running"):
         st.markdown("---")
         st.markdown("### 📦 Production Deliverables & Assets")
 
@@ -824,10 +824,13 @@ elif menu == "📤 Social Publisher":
         subtitle="Automate one-click publishing to YouTube Data API and Facebook Graph API."
     )
 
-    latest = st.session_state.get("latest_production_result", {})
-    def_video = latest.get("video_path", str(OUTPUT_DIR / "final_video.mp4"))
-    def_title = latest.get("title", "Top 5 AI Innovations in 2026")
-    def_desc = latest.get("seo", {}).get("description", "Discover the latest AI tools changing the industry.")
+    latest = st.session_state.get("latest_production_result")
+    if not isinstance(latest, dict):
+        latest = {}
+        
+    def_video = latest.get("video_path", str(OUTPUT_DIR / "final_video.mp4")) if latest else str(OUTPUT_DIR / "final_video.mp4")
+    def_title = latest.get("title", "Top 5 AI Innovations in 2026") if latest else "Top 5 AI Innovations in 2026"
+    def_desc = latest.get("seo", {}).get("description", "Discover the latest AI tools changing the industry.") if (latest and isinstance(latest.get("seo"), dict)) else "Discover the latest AI tools changing the industry."
 
     v_file = st.text_input("Path to MP4 Video", value=def_video)
     p_title = st.text_input("Post Title", value=def_title)
