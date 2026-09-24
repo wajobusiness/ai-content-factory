@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Secrets & Environment variables
+.env
+client_secrets.json
+token.json
+oauth_credentials.json
+
+# Output and temp files
+temp/
+output/*.mp4
+output/*.mp3
+output/*.png
+output/*.jpg
+output/*.srt
+output/*.json
+!output/.gitkeep
+!temp/.gitkeep
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
