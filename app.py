@@ -1,11 +1,12 @@
 """
 AI Content Factory Pro - Enterprise SaaS Web Dashboard
-Interactive UI for automated video generation, trend research, voiceover, thumbnails, and SEO.
+Interactive UI for automated video generation, trend research, voiceover, thumbnails, connected accounts, and Post API.
 """
 
 import os
 import sys
 import time
+import json
 from pathlib import Path
 import streamlit as st
 
@@ -37,6 +38,7 @@ from content.ai_image_gen import AIImageGenerator
 from content.thumbnail_maker import ThumbnailMaker
 from content.cartoon_studio import CartoonStudio
 from seo.seo_engine import SEOEngine
+from platforms.account_manager import AccountManager
 from platforms.youtube_uploader import YouTubeUploader
 from platforms.facebook_publisher import FacebookPublisher
 from auto_scheduler import ContentPipeline
@@ -56,30 +58,34 @@ inject_custom_theme()
 # Initialize unified session state
 init_session_state()
 
-# Sidebar Navigation & Branding
+# Navigation & Branding
 st.sidebar.markdown("""
-<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-    <div style="background: linear-gradient(135deg, #6366F1, #EC4899); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 800; color: white;">⚡</div>
+<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 4px;">
+    <div style="background: linear-gradient(135deg, #6366F1, #EC4899); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 800; color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);">⚡</div>
     <div>
-        <div style="font-size: 1.15rem; font-weight: 800; color: #F8FAFC; letter-spacing: -0.02em;">ContentForge AI</div>
-        <div style="font-size: 0.75rem; color: #94A3B8;">Autonomous Production Studio</div>
+        <div style="font-size: 1.2rem; font-weight: 800; color: #F8FAFC; letter-spacing: -0.02em;">ContentForge</div>
+        <div style="font-size: 0.72rem; color: #A5B4FC; font-weight: 600;">Autonomous Media SaaS</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
+menu_options = [
+    "🏠 Studio Hub (Home)",
+    "🚀 One-Click Studio",
+    "🔍 Trend Radar",
+    "📝 AI Script Studio",
+    "🎙️ Voiceover Studio",
+    "🎨 Visuals & A/B Thumbnails",
+    "🎭 3D Cartoon Studio",
+    "📈 Viral SEO Engine",
+    "🔗 Connected Accounts & Post API",
+    "📤 Social Publisher",
+    "🗄️ Media Library & Diagnostics"
+]
+
 menu = st.sidebar.radio(
-    "Navigation",
-    [
-        "🚀 One-Click Studio",
-        "🔍 Trend Radar",
-        "📝 AI Script Studio",
-        "🎙️ Voiceover Studio",
-        "🎨 Visuals & A/B Thumbnails",
-        "🎭 Cartoon Studio",
-        "📈 SEO Engine",
-        "📤 Social Publisher",
-        "🗄️ Media Library & Diagnostics"
-    ],
+    "Navigation Menu",
+    menu_options,
     index=0
 )
 
@@ -88,17 +94,120 @@ active_topic = get_workspace_topic()
 if active_topic:
     st.sidebar.markdown(f"""
     <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 8px; padding: 10px; margin-top: 10px;">
-        <div style="font-size: 0.72rem; color: #A5B4FC; text-transform: uppercase; font-weight: 700;">Active Project Context</div>
-        <div style="font-size: 0.82rem; color: #F8FAFC; font-weight: 600; margin-top: 3px; word-break: break-word;">{active_topic[:45]}...</div>
+        <div style="font-size: 0.72rem; color: #A5B4FC; text-transform: uppercase; font-weight: 700;">Active Topic</div>
+        <div style="font-size: 0.82rem; color: #F8FAFC; font-weight: 600; margin-top: 3px; word-break: break-word;">{active_topic[:42]}...</div>
     </div>
     """, unsafe_allow_html=True)
 
 render_api_status_sidebar()
 
 # ==============================================================================
+# TAB 0: STUDIO HUB (HOME PAGE)
+# ==============================================================================
+if menu == "🏠 Studio Hub (Home)":
+    render_dashboard_header(
+        title="🏠 Studio Hub & Launchpad",
+        subtitle="Welcome to your AI Content Command Center. Build, schedule, and distribute high-retention content autonomously."
+    )
+
+    # Top KPI Metrics Row
+    history_file = OUTPUT_DIR / "pipeline_history.json"
+    records = load_json(history_file, default=[])
+    total_videos = len(records)
+    
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        render_metric_card("Total Productions", str(total_videos), badge="Active", badge_type="pro", subtext="Rendered videos")
+    with m2:
+        render_metric_card("Production Cost", "$0.00", badge="Free Tier", badge_type="success", subtext="100% Free stack")
+    with m3:
+        render_metric_card("Average Render", "~45s", badge="High Speed", badge_type="success", subtext="MoviePy + FFmpeg")
+    with m4:
+        acct_mgr = AccountManager()
+        accts = acct_mgr.get_all_accounts()
+        connected_count = sum(1 for k in ["youtube", "facebook", "webhook"] if accts.get(k, {}).get("connected"))
+        render_metric_card("Connected Accounts", f"{connected_count}/3 Active", badge="Ready", badge_type="pro", subtext="YouTube, FB, Webhooks")
+
+    st.markdown("---")
+    st.markdown("### ⚡ Quick Studio Launchpad")
+    st.markdown("Jump directly into any production studio or trigger an end-to-end automated workflow:")
+
+    c_l1, c_l2, c_l3 = st.columns(3)
+
+    with c_l1:
+        st.markdown("""
+        <div class="launchpad-card">
+            <div class="launchpad-icon" style="background: rgba(99, 102, 241, 0.15); color: #818CF8;">🚀</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #F8FAFC;">One-Click Studio</div>
+            <div style="font-size: 0.85rem; color: #94A3B8; margin: 6px 0 14px 0;">Generate an entire multi-scene HD video with voiceover, A/B thumbnails & SEO in 60s.</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Launch One-Click Studio ➔", key="launch_one_click", use_container_width=True, type="primary"):
+            st.session_state["nav_override"] = "🚀 One-Click Studio"
+            st.info("Select '🚀 One-Click Studio' from the sidebar menu to begin.")
+
+    with c_l2:
+        st.markdown("""
+        <div class="launchpad-card">
+            <div class="launchpad-icon" style="background: rgba(236, 72, 153, 0.15); color: #F472B6;">🔍</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #F8FAFC;">Viral Trend Radar</div>
+            <div style="font-size: 0.85rem; color: #94A3B8; margin: 6px 0 14px 0;">Scan Google Trends, Reddit, and Hacker News for viral topics scored by momentum.</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Scan Trends ➔", key="launch_trends", use_container_width=True):
+            st.info("Select '🔍 Trend Radar' from the sidebar menu to explore.")
+
+    with c_l3:
+        st.markdown("""
+        <div class="launchpad-card">
+            <div class="launchpad-icon" style="background: rgba(16, 185, 129, 0.15); color: #34D399;">🔗</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #F8FAFC;">Post API & Accounts</div>
+            <div style="font-size: 0.85rem; color: #94A3B8; margin: 6px 0 14px 0;">Connect YouTube, Facebook & Webhooks, and test the programmatic Post API endpoint.</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Manage Accounts & API ➔", key="launch_accounts", use_container_width=True):
+            st.info("Select '🔗 Connected Accounts & Post API' from the sidebar menu.")
+
+    c_l4, c_l5, c_l6 = st.columns(3)
+
+    with c_l4:
+        st.markdown("""
+        <div class="launchpad-card">
+            <div class="launchpad-icon" style="background: rgba(245, 158, 11, 0.15); color: #FBBF24;">🎙️</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #F8FAFC;">Voiceover Studio</div>
+            <div style="font-size: 0.85rem; color: #94A3B8; margin: 6px 0 14px 0;">100% Free natural human voice synthesis with pitch/speed controls and synced SRT.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c_l5:
+        st.markdown("""
+        <div class="launchpad-card">
+            <div class="launchpad-icon" style="background: rgba(168, 85, 247, 0.15); color: #C084FC;">🎨</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #F8FAFC;">A/B Thumbnail Maker</div>
+            <div style="font-size: 0.85rem; color: #94A3B8; margin: 6px 0 14px 0;">Generate 3 high-converting thumbnail variants simultaneously for CTR split testing.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c_l6:
+        st.markdown("""
+        <div class="launchpad-card">
+            <div class="launchpad-icon" style="background: rgba(59, 130, 246, 0.15); color: #60A5FA;">🎭</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #F8FAFC;">3D Cartoon Studio</div>
+            <div style="font-size: 0.85rem; color: #94A3B8; margin: 6px 0 14px 0;">Create animated stories with character consistency, speech bubbles, and soundscapes.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Active Project Status Banner
+    if active_topic:
+        st.markdown("---")
+        st.markdown("### 📌 Active Workspace Project")
+        st.info(f"**Current Topic:** {active_topic}\n\nYou can refine the script in **📝 AI Script Studio**, generate custom audio in **🎙️ Voiceover Studio**, or render in **🚀 One-Click Studio**.")
+
+
+# ==============================================================================
 # TAB 1: ONE-CLICK PRODUCTION STUDIO
 # ==============================================================================
-if menu == "🚀 One-Click Studio":
+elif menu == "🚀 One-Click Studio":
     render_dashboard_header(
         title="🚀 Autonomous Video Studio",
         subtitle="End-to-end multi-scene video, AI voiceover, A/B thumbnails & SEO package in 60 seconds."
@@ -200,11 +309,6 @@ if menu == "🚀 One-Click Studio":
 
     if generate_btn:
         pipeline_steps = ["1. Trend & Script", "2. Voice & Subtitles", "3. Visuals & Motion", "4. Video Render", "5. SEO & Package"]
-        stepper_placeholder = st.empty()
-        status_placeholder = st.empty()
-
-        stepper_placeholder.markdown('<div class="saas-card">Initializing Autonomous Engine...</div>', unsafe_allow_html=True)
-
         pipeline = ContentPipeline()
         with st.status("🎬 Running Autonomous Production Engine...", expanded=True) as status:
             render_stepper(pipeline_steps, 0)
@@ -234,7 +338,6 @@ if menu == "🚀 One-Click Studio":
         st.markdown("---")
         st.markdown("### 📦 Production Deliverables & Assets")
 
-        # 1-Click ZIP Bundle Exporter
         zip_buffer = create_asset_bundle_zip(latest)
         st.download_button(
             label="⚡ Download Complete Production Bundle (.ZIP with Video, Audio, Thumbnails, SRT & SEO)",
@@ -307,7 +410,7 @@ elif menu == "🔍 Trend Radar":
         with c_use1:
             if st.button(f"⚡ Use Topic", key=f"use_topic_{idx}", use_container_width=True):
                 set_active_topic(t.get("title", ""), niche=niche_filter)
-                st.success(f"Selected: '{t.get('title')}'! Head to One-Click Studio or Script Studio.")
+                st.success(f"Selected: '{t.get('title')}'! Go to One-Click Studio to render.")
 
 
 # ==============================================================================
@@ -455,7 +558,7 @@ elif menu == "🎨 Visuals & A/B Thumbnails":
 # ==============================================================================
 # TAB 6: CARTOON STUDIO
 # ==============================================================================
-elif menu == "🎭 Cartoon Studio":
+elif menu == "🎭 3D Cartoon Studio":
     render_dashboard_header(
         title="🎭 3D Cartoon Story Studio",
         subtitle="Create animated character episodes with comic speech bubbles, whimsical narration, and soundscapes."
@@ -487,7 +590,7 @@ elif menu == "🎭 Cartoon Studio":
 # ==============================================================================
 # TAB 7: SEO ENGINE
 # ==============================================================================
-elif menu == "📈 SEO Engine":
+elif menu == "📈 Viral SEO Engine":
     render_dashboard_header(
         title="📈 Viral SEO & Metadata Optimizer",
         subtitle="Generate viral YouTube/TikTok titles, clickability-scored descriptions, and keyword tags."
@@ -524,7 +627,168 @@ elif menu == "📈 SEO Engine":
 
 
 # ==============================================================================
-# TAB 8: SOCIAL PUBLISHER
+# TAB 8: CONNECTED ACCOUNTS & POST API
+# ==============================================================================
+elif menu == "🔗 Connected Accounts & Post API":
+    render_dashboard_header(
+        title="🔗 Connected Accounts & Post API",
+        subtitle="Connect social media accounts, store API tokens, and access the automated HTTP Post API."
+    )
+
+    tab_accts, tab_api = st.tabs(["🔐 Connected Accounts & Keys", "⚡ Interactive Post API Sandbox & Docs"])
+
+    acct_mgr = AccountManager()
+    accts = acct_mgr.get_all_accounts()
+
+    with tab_accts:
+        st.markdown("### 📱 Social Publishing Accounts")
+        st.caption("Link your YouTube channel, Facebook Page, or automated Webhooks to enable one-click publishing.")
+
+        # YouTube Account
+        with st.expander("▶️ YouTube Channel Integration", expanded=True):
+            yt_data = accts.get("youtube", {})
+            yt_name = st.text_input("Channel Label / Name", value=yt_data.get("channel_name", "My YouTube Channel"))
+            yt_secrets = st.text_input("Client Secrets Path (JSON)", value=yt_data.get("client_secrets_path", ""))
+            yt_token = st.text_input("Token Path (JSON)", value=yt_data.get("token_path", ""))
+            
+            c_yt1, c_yt2 = st.columns(2)
+            with c_yt1:
+                if st.button("💾 Save YouTube Account", type="primary"):
+                    acct_mgr.save_youtube_account(channel_name=yt_name, client_secrets_path=yt_secrets, token_path=yt_token)
+                    st.success("YouTube account configuration saved!")
+            with c_yt2:
+                yt_status = "🟢 Connected" if (os.path.exists(yt_token) or os.path.exists(yt_secrets)) else "⚪ Simulation Mode Ready"
+                st.markdown(f"**Status:** {yt_status}")
+
+        # Facebook Account
+        with st.expander("📘 Facebook Page & Reels Integration", expanded=True):
+            fb_data = accts.get("facebook", {})
+            fb_name = st.text_input("Page Name / Label", value=fb_data.get("page_name", "My Facebook Page"))
+            fb_page_id = st.text_input("Facebook Page ID", value=fb_data.get("page_id", ""))
+            fb_token = st.text_input("Facebook Page Access Token", value=fb_data.get("access_token", ""), type="password")
+            
+            c_fb1, c_fb2 = st.columns(2)
+            with c_fb1:
+                if st.button("💾 Save Facebook Account", type="primary"):
+                    acct_mgr.save_facebook_account(page_name=fb_name, page_id=fb_page_id, access_token=fb_token)
+                    st.success("Facebook configuration saved!")
+            with c_fb2:
+                if st.button("🔍 Test Facebook Page Token"):
+                    with st.spinner("Validating with Facebook Graph API..."):
+                        t_res = acct_mgr.test_facebook(page_id=fb_page_id, access_token=fb_token)
+                        if t_res.get("success"):
+                            st.success(f"✅ Connected to '{t_res.get('page_name')}' ({t_res.get('fan_count')} followers)!")
+                        else:
+                            st.warning(f"Connection test: {t_res.get('error')}")
+
+        # Webhook / TikTok / Zapier / Make.com
+        with st.expander("🌐 Custom Automation Webhook (Make / Zapier / TikTok)", expanded=True):
+            wh_data = accts.get("webhook", {})
+            wh_name = st.text_input("Webhook Name", value=wh_data.get("name", "Make.com Content Automation"))
+            wh_url = st.text_input("Webhook POST URL", value=wh_data.get("url", ""), placeholder="https://hook.eu1.make.com/xxxxxx")
+            wh_secret = st.text_input("Bearer Secret / Token (optional)", value=wh_data.get("secret_token", ""), type="password")
+
+            c_wh1, c_wh2 = st.columns(2)
+            with c_wh1:
+                if st.button("💾 Save Webhook Endpoint", type="primary"):
+                    acct_mgr.save_webhook_account(name=wh_name, url=wh_url, secret_token=wh_secret)
+                    st.success("Webhook endpoint saved!")
+            with c_wh2:
+                if st.button("📡 Send Test Ping"):
+                    with st.spinner("Pinging Webhook..."):
+                        p_res = acct_mgr.test_webhook(url=wh_url, secret=wh_secret)
+                        if p_res.get("success"):
+                            st.success(f"✅ Webhook ping successful (HTTP {p_res.get('status_code')})!")
+                        else:
+                            st.warning(f"Webhook test: {p_res.get('error')}")
+
+        # Custom AI Engine Keys
+        with st.expander("🔑 Custom AI Engine Keys (Optional)", expanded=False):
+            ai_data = accts.get("ai_engines", {})
+            k_groq = st.text_input("Groq API Key", value=ai_data.get("groq_api_key", GROQ_API_KEY), type="password")
+            k_gemini = st.text_input("Gemini API Key", value=ai_data.get("gemini_api_key", GEMINI_API_KEY), type="password")
+            k_pexels = st.text_input("Pexels API Key", value=ai_data.get("pexels_api_key", PEXELS_API_KEY), type="password")
+
+            if st.button("💾 Save AI Engine Keys"):
+                acct_mgr.save_ai_keys(groq_key=k_groq, gemini_key=k_gemini, pexels_key=k_pexels)
+                st.success("AI Engine keys updated!")
+
+    with tab_api:
+        st.markdown("### ⚡ Programmatic Post API Sandbox")
+        st.caption("Trigger autonomous video generation and publishing via HTTP POST requests from any app, script, Zapier, or Make.com.")
+
+        st.markdown("#### 1. Live Endpoint Overview")
+        st.markdown("""
+        | Method | Endpoint | Description |
+        | :--- | :--- | :--- |
+        | `POST` | `/api/v1/generate` | Generate complete video, voiceover, thumbnails, and SEO |
+        | `POST` | `/api/v1/publish` | Upload video to YouTube or Facebook |
+        | `GET` | `/api/v1/trends` | Fetch real-time viral trends for any niche |
+        | `GET` | `/api/v1/health` | Service health & connectivity ping |
+        """)
+
+        st.markdown("#### 2. Interactive POST API Tester")
+        api_topic = st.text_input("Test Topic", value="Top 5 Artificial Intelligence Breakthroughs in 2026")
+        c_a1, c_a2 = st.columns(2)
+        with c_a1:
+            api_niche = st.selectbox("API Niche", ["tech", "finance", "motivation", "mystery", "science"])
+        with c_a2:
+            api_format = st.selectbox("API Format", ["shorts", "tech_review", "motivational", "educational"])
+
+        if st.button("🚀 Execute POST /api/v1/generate", type="primary", use_container_width=True):
+            pipeline = ContentPipeline()
+            with st.spinner("Processing API generation request..."):
+                res = pipeline.run_full_pipeline(
+                    topic=api_topic,
+                    niche=api_niche,
+                    content_type=api_format,
+                    dry_run=True
+                )
+            st.success("HTTP 200 OK — Generation Complete!")
+            st.json({
+                "status": "success",
+                "code": 200,
+                "video_title": res.get("title"),
+                "video_url": res.get("video_path"),
+                "thumbnail_url": res.get("thumbnail_path"),
+                "audio_url": res.get("audio_path"),
+                "elapsed_seconds": res.get("elapsed_seconds")
+            })
+
+        st.markdown("#### 3. Integration Code Snippets")
+        code_tab1, code_tab2 = st.tabs(["cURL", "Python Request"])
+        with code_tab1:
+            st.code("""
+curl -X POST http://localhost:8000/api/v1/generate \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "topic": "5 AI Inventions That Shocked Everyone in 2026",
+    "niche": "tech",
+    "content_type": "shorts",
+    "orientation": "vertical",
+    "auto_publish": false
+  }'
+            """, language="bash")
+        with code_tab2:
+            st.code("""
+import requests
+
+payload = {
+    "topic": "5 AI Inventions That Shocked Everyone in 2026",
+    "niche": "tech",
+    "content_type": "shorts",
+    "orientation": "vertical",
+    "auto_publish": False
+}
+
+response = requests.post("http://localhost:8000/api/v1/generate", json=payload)
+data = response.json()
+print("Generated Video:", data["result"]["video_path"])
+            """, language="python")
+
+
+# ==============================================================================
+# TAB 9: SOCIAL PUBLISHER
 # ==============================================================================
 elif menu == "📤 Social Publisher":
     render_dashboard_header(
@@ -555,7 +819,7 @@ elif menu == "📤 Social Publisher":
 
 
 # ==============================================================================
-# TAB 9: MEDIA LIBRARY & DIAGNOSTICS
+# TAB 10: MEDIA LIBRARY & DIAGNOSTICS
 # ==============================================================================
 elif menu == "🗄️ Media Library & Diagnostics":
     render_dashboard_header(

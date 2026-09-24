@@ -152,6 +152,45 @@ def inject_custom_theme():
             margin-bottom: 6px;
         }
 
+        /* Launchpad Grid Card */
+        .launchpad-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 20px;
+            height: 100%;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .launchpad-card:hover {
+            background: rgba(99, 102, 241, 0.07);
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px -8px rgba(99, 102, 241, 0.2);
+        }
+
+        .launchpad-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 12px;
+        }
+
+        .sidebar-section-header {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748B;
+            font-weight: 700;
+            margin-top: 14px;
+            margin-bottom: 6px;
+        }
+
         /* Custom Streamlit Tabs & Buttons polish */
         .stButton>button {
             border-radius: 10px !important;
